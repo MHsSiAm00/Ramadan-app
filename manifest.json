@@ -1,0 +1,19 @@
+ 
+{
+  "name": "Ramadan 2026 Sirajganj",
+  "short_name": "Ramadan",
+  "description": "Offline Ramadan Timings for Sirajganj",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0b1d3a",
+  "theme_color": "#0b1d3a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2290/2290077.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

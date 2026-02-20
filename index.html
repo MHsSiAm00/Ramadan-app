@@ -1,0 +1,309 @@
+ 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ramadan 2026 — Sirajganj</title>
+
+<meta name="theme-color" content="#0b1d3a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --gold: #f4c430;
+  --deep-blue: #0b1d3a;
+  --glass: rgba(255,255,255,0.08);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #0b1d3a, #132b55);
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  /* Android Optimizations */
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.container {
+  width: 95%;
+  max-width: 420px;
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+  text-align: center;
+}
+
+h1 { font-weight: 600; font-size: 1.5rem; margin-bottom: 5px; }
+.subtitle { font-size: 0.85rem; opacity: 0.8; margin-bottom: 20px; }
+.date { font-size: 0.9rem; opacity: 0.8; margin-bottom: 15px; }
+
+.time-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.05);
+}
+
+.label { font-weight: 500; }
+
+.countdown {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 15px;
+  color: var(--gold);
+  font-family: monospace;
+  letter-spacing: 2px;
+}
+
+.urgent { animation: pulse 1s infinite; }
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.event { margin-top: 10px; font-size: 1rem; opacity: 0.9; }
+
+.emoji-row { margin-top: 20px; }
+
+.emoji-btn {
+  font-size: 1rem;
+  padding: 12px 20px;
+  margin: 8px;
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.sehri-btn { background: linear-gradient(135deg,#1e3c72,#2a5298); color: white; }
+.iftar-btn { background: linear-gradient(135deg,#c79000,#f4c430); color: black; }
+
+.emoji-btn:active { transform: scale(0.95); opacity: 0.8; }
+
+footer { margin-top: 20px; font-size: 0.7rem; opacity: 0.6; }
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #0b1d3a;
+  padding: 25px;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 350px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.arabic { font-family: 'Amiri', serif; font-size: 1.6rem; margin: 15px 0; color: var(--gold); }
+.translit { font-style: italic; font-size: 0.9rem; opacity: 0.8; line-height: 1.4; }
+
+.close-btn {
+  margin-top: 20px;
+  padding: 10px 25px;
+  border: none;
+  background: var(--gold);
+  color: black;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>🌙 Ramadan 2026</h1>
+  <div class="subtitle">Sirajganj, Bangladesh</div>
+  <div class="date" id="todayDate"></div>
+
+  <div class="time-row">
+    <div class="label">🌅 Sehri Ends</div>
+    <div id="sehriTime">--:-- AM</div>
+  </div>
+
+  <div class="time-row">
+    <div class="label">🌇 Iftar Starts</div>
+    <div id="iftarTime">--:-- PM</div>
+  </div>
+
+  <div class="event" id="nextEvent">Loading...</div>
+  <div class="countdown" id="countdown">00:00:00</div>
+
+  <div class="emoji-row">
+    <button class="emoji-btn sehri-btn" onclick="openDua('sehri')">🌅 Sehri Dua</button>
+    <button class="emoji-btn iftar-btn" onclick="openDua('iftar')">🌇 Iftar Dua</button>
+  </div>
+
+  <footer>Built for Android • Offline Active</footer>
+</div>
+
+<div class="modal" id="duaModal">
+  <div class="modal-content">
+    <div id="duaText"></div>
+    <button class="close-btn" onclick="closeModal()">Close</button>
+  </div>
+</div>
+
+<script>
+// Register Service Worker for Offline Support
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+
+// Caching DOM elements for performance
+const el = {
+  todayDate: document.getElementById("todayDate"),
+  sehriTime: document.getElementById("sehriTime"),
+  iftarTime: document.getElementById("iftarTime"),
+  nextEvent: document.getElementById("nextEvent"),
+  countdown: document.getElementById("countdown"),
+  duaModal: document.getElementById("duaModal"),
+  duaText: document.getElementById("duaText")
+};
+
+const schedule = {
+  "2026-02-19": { sehri: "05:12", iftar: "06:01 PM" },
+  "2026-02-20": { sehri: "05:11", iftar: "06:02 PM" },
+  "2026-02-21": { sehri: "05:10", iftar: "06:03 PM" },
+  "2026-02-22": { sehri: "05:09", iftar: "06:03 PM" },
+  "2026-02-23": { sehri: "05:09", iftar: "06:04 PM" },
+  "2026-02-24": { sehri: "05:08", iftar: "06:04 PM" },
+  "2026-02-25": { sehri: "05:07", iftar: "06:05 PM" },
+  "2026-02-26": { sehri: "05:06", iftar: "06:05 PM" },
+  "2026-02-27": { sehri: "05:05", iftar: "06:06 PM" },
+  "2026-02-28": { sehri: "05:05", iftar: "06:06 PM" },
+  "2026-03-01": { sehri: "05:04", iftar: "06:07 PM" },
+  "2026-03-02": { sehri: "05:03", iftar: "06:07 PM" },
+  "2026-03-03": { sehri: "05:03", iftar: "06:08 PM" },
+  "2026-03-04": { sehri: "05:02", iftar: "06:08 PM" },
+  "2026-03-05": { sehri: "05:01", iftar: "06:09 PM" },
+  "2026-03-06": { sehri: "05:00", iftar: "06:10 PM" },
+  "2026-03-07": { sehri: "04:59", iftar: "06:10 PM" },
+  "2026-03-08": { sehri: "04:58", iftar: "06:11 PM" },
+  "2026-03-09": { sehri: "04:57", iftar: "06:11 PM" },
+  "2026-03-10": { sehri: "04:56", iftar: "06:12 PM" },
+  "2026-03-11": { sehri: "04:55", iftar: "06:12 PM" },
+  "2026-03-12": { sehri: "04:54", iftar: "06:13 PM" },
+  "2026-03-13": { sehri: "04:53", iftar: "06:13 PM" },
+  "2026-03-14": { sehri: "04:52", iftar: "06:14 PM" },
+  "2026-03-15": { sehri: "04:51", iftar: "06:14 PM" },
+  "2026-03-16": { sehri: "04:50", iftar: "06:15 PM" },
+  "2026-03-17": { sehri: "04:48", iftar: "06:15 PM" },
+  "2026-03-18": { sehri: "04:47", iftar: "06:15 PM" },
+  "2026-03-19": { sehri: "04:46", iftar: "06:16 PM" },
+  "2026-03-20": { sehri: "04:45", iftar: "06:16 PM" }
+};
+
+function getLocalDateKey() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+}
+
+function parseTimeString(timeStr) {
+  let isPM = /PM/i.test(timeStr);
+  let [h, m] = timeStr.replace(/(AM|PM)/i, "").trim().split(":").map(Number);
+  if (isPM && h !== 12) h += 12;
+  if (!isPM && h === 12) h = 0;
+  return { h, m };
+}
+
+function buildDate(dateKey, timeStr) {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  const { h, minute } = parseTimeString(timeStr);
+  return new Date(y, m-1, d, h, minute || 0);
+}
+
+function update() {
+  const now = new Date();
+  el.todayDate.innerText = now.toDateString();
+  const todayKey = getLocalDateKey();
+  const todayEntry = schedule[todayKey];
+  
+  if (!todayEntry) {
+    el.nextEvent.innerText = "Ramadan is over ✨";
+    return;
+  }
+
+  const sehriToday = buildDate(todayKey, todayEntry.sehri);
+  const iftarToday = buildDate(todayKey, todayEntry.iftar);
+
+  el.sehriTime.innerText = todayEntry.sehri + " AM";
+  el.iftarTime.innerText = todayEntry.iftar;
+
+  let target, label;
+  if (now < sehriToday) {
+    target = sehriToday; label = "Sehri Ends In";
+  } else if (now < iftarToday) {
+    target = iftarToday; label = "Iftar Starts In";
+  } else {
+    const tomorrow = new Date(now); tomorrow.setDate(now.getDate()+1);
+    const nextKey = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth()+1).padStart(2,"0")}-${String(tomorrow.getDate()).padStart(2,"0")}`;
+    if(schedule[nextKey]) {
+      target = buildDate(nextKey, schedule[nextKey].sehri);
+      label = "Next Sehri In";
+    } else {
+      el.nextEvent.innerText = "Eid Mubarak! 🎉";
+      return;
+    }
+  }
+
+  el.nextEvent.innerText = label;
+  const diff = target - now;
+  const hours = Math.floor(diff / 3600000);
+  const mins = Math.floor((diff % 3600000) / 60000);
+  const secs = Math.floor((diff % 60000) / 1000);
+  
+  el.countdown.innerText = `${String(hours).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+  if (diff < 600000) el.countdown.classList.add("urgent");
+  else el.countdown.classList.remove("urgent");
+}
+
+function openDua(type) {
+  if (navigator.vibrate) navigator.vibrate(40); // Haptic feedback
+  if (type === "sehri") {
+    el.duaText.innerHTML = '<div class="arabic">وَبِصَوْمِ غَدٍ نَّوَيْتُ مِنْ شَهْرِ رَمَضَانَ</div>' +
+                           '<div class="translit">"Wa bisawmi ghadin nawaytu min shahri Ramadan"</div>';
+  } else {
+    el.duaText.innerHTML = '<div class="arabic">اللهم لك صمت وعلى رزقك أفطرت</div>' +
+                           '<div class="translit">"Allahumma laka sumtu wa ala rizqika aftartu"</div>';
+  }
+  el.duaModal.style.display = "flex";
+}
+
+function closeModal() { el.duaModal.style.display = "none"; }
+setInterval(update, 1000);
+update();
+</script>
+
+</body>
+</html>
